@@ -3,15 +3,15 @@
 import { Input } from '@material-tailwind/react';
 import { Spinner } from '@material-tailwind/react';
 import Head from 'next/head';
-import React, { ChangeEvent, useCallback, useState } from 'react';
+import React, { ChangeEvent, useCallback, useEffect, useState } from 'react';
 import InfiniteScroll from 'react-infinite-scroll-component';
 
 import { Podcast } from '@/lib/types';
 
 import { PodcastCard } from '@/components/cards/PodcastCard';
 
+import { useGetPodcastsQuery } from '@/app/graphql/generated-gql';
 import useDebounce from '@/app/hooks/useDebounce';
-import usePodcasts from '@/app/hooks/usePodcasts';
 /**
  * SVGR Support
  * Caveat: No React Props Type.
@@ -27,18 +27,42 @@ import usePodcasts from '@/app/hooks/usePodcasts';
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const debouncedSearchQuery = useDebounce<string>(searchQuery, 500);
+  const [page, setPage] = useState<number>(1);
+  const [podcasts, setPodcasts] = useState<Podcast[]>([]);
+  const [hasMoreData, setHasMoreData] = useState<boolean>(true);
   const limit = 6;
 
-  const { podcasts, setSize, size } = usePodcasts(debouncedSearchQuery, limit);
+  const [result] = useGetPodcastsQuery({
+    variables: {
+      page,
+      limit,
+      search: debouncedSearchQuery,
+    },
+  });
+
+  // const { podcasts, setSize, size } = usePodcasts(debouncedSearchQuery, limit);
+
+  useEffect(() => {
+    if (result.data?.podcasts) {
+      const data = result.data?.podcasts as Podcast[];
+      setPodcasts((podcasts) => [...podcasts, ...data]);
+
+      if (result.data?.podcasts.length === limit) {
+        setHasMoreData(true);
+      } else {
+        setHasMoreData(false);
+      }
+    }
+  }, [result.data]);
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
-    setSize(1);
+    setPage(1);
   };
 
   const loadMorePodcasts = useCallback(() => {
-    setSize(size + 1);
-  }, [size, setSize]);
+    setPage(page + 1);
+  }, [page, setPage]);
 
   return (
     <main>
@@ -55,14 +79,14 @@ export default function HomePage() {
           />
         </div>
         <InfiniteScroll
-          dataLength={podcasts.length}
+          dataLength={podcasts?.length ?? 0}
           next={loadMorePodcasts}
           loader={
             <div className='flex flex-col items-center justify-center mt-8 mb-8'>
               <Spinner />
             </div>
           }
-          hasMore={true}
+          hasMore={hasMoreData}
         >
           <div className='grid grid-cols-3 gap-4 mt-8 mb-8'>
             {podcasts &&
