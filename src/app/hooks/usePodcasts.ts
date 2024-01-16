@@ -1,27 +1,43 @@
 import axios from 'axios';
-import useSWR from 'swr';
+import useSWRInfinite from 'swr/infinite';
+
+import { GetPodcastsResponse, Podcast } from '@/lib/types';
 
 import { apiBaseURL } from '@/constant/env';
 
-const fetchPodcasts = (query: string) => {
-  let url = `${apiBaseURL}/podcasts`;
-  if (query) {
-    url += `?search=${query}`;
-  }
+const fetchPodcasts = (url: string) =>
+  axios.get(url).then((res) => res.data as GetPodcastsResponse);
 
-  return axios.get(url).then((res) => res.data);
-};
+function usePodcasts(query: string, limit: number) {
+  // SWR key function
+  const getKey = (pageIndex: number, previousPageData: GetPodcastsResponse) => {
+    // Stop fetching if we reached the end of the data
+    if (previousPageData && !previousPageData.podcasts.length) return null;
 
-function usePodcasts(query: string) {
+    // Your API endpoint with the current page index
+    let url = `${apiBaseURL}/podcasts?page=${pageIndex + 1}&limit=${limit}`;
+    if (query) {
+      url += `&search=${query}`;
+    }
+    return url;
+  };
   // Using useSWR to fetch data
-  const { data, error } = useSWR(query ? ['podcasts', query] : 'podcasts', () =>
-    fetchPodcasts(query)
-  );
+  const { data, error, setSize, size } = useSWRInfinite(getKey, fetchPodcasts);
+
+  const res = data as unknown as GetPodcastsResponse[];
+  const allPodcasts: Podcast[] = res
+    ? res.flatMap((page) => page.podcasts)
+    : [];
+
+  const hasMoreData =
+    size === 0 || (res && res[size - 1]?.podcasts?.length > 0);
 
   return {
-    data,
-    isLoading: !error && !data,
+    podcasts: allPodcasts,
+    hasMoreData,
     isError: error,
+    setSize,
+    size,
   };
 }
 

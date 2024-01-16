@@ -19,3 +19,7 @@ export type Podcast = {
   hasFreeEpisodes: boolean;
   playSequence: string;
 };
+
+export type GetPodcastsResponse = {
+  podcasts: Podcast[];
+};

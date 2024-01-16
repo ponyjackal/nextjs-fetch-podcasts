@@ -1,8 +1,10 @@
 'use client';
 
 import { Input } from '@material-tailwind/react';
+import { Spinner } from '@material-tailwind/react';
 import Head from 'next/head';
-import React, { ChangeEvent, useState } from 'react';
+import React, { ChangeEvent, useCallback, useState } from 'react';
+import InfiniteScroll from 'react-infinite-scroll-component';
 
 import { Podcast } from '@/lib/types';
 
@@ -25,17 +27,23 @@ import usePodcasts from '@/app/hooks/usePodcasts';
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const debouncedSearchQuery = useDebounce<string>(searchQuery, 500);
+  const limit = 6;
+
+  const { podcasts, setSize, size } = usePodcasts(debouncedSearchQuery, limit);
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
+    setSize(1);
   };
 
-  const { data } = usePodcasts(debouncedSearchQuery);
+  const loadMorePodcasts = useCallback(() => {
+    setSize(size + 1);
+  }, [size, setSize]);
 
   return (
     <main>
       <Head>
-        <title>Hi</title>
+        <title>Podcasts</title>
       </Head>
       <section className='bg-white flex flex-col items-center justify-center'>
         <div className='w-72 mt-8'>
@@ -46,13 +54,23 @@ export default function HomePage() {
             onChange={handleInputChange}
           />
         </div>
-        <div className='mt-8 grid grid-cols-3 gap-4'>
-          {data &&
-            data.podcasts &&
-            data.podcasts.map((podcast: Podcast) => (
-              <PodcastCard key={podcast.title} podcast={podcast} />
-            ))}
-        </div>
+        <InfiniteScroll
+          dataLength={podcasts.length}
+          next={loadMorePodcasts}
+          loader={
+            <div className='flex flex-col items-center justify-center mt-8 mb-8'>
+              <Spinner />
+            </div>
+          }
+          hasMore={true}
+        >
+          <div className='grid grid-cols-3 gap-4 mt-8 mb-8'>
+            {podcasts &&
+              podcasts.map((podcast: Podcast) => (
+                <PodcastCard key={podcast.title} podcast={podcast} />
+              ))}
+          </div>
+        </InfiniteScroll>
       </section>
     </main>
   );
