@@ -40,8 +40,6 @@ export default function HomePage() {
     },
   });
 
-  // const { podcasts, setSize, size } = usePodcasts(debouncedSearchQuery, limit);
-
   useEffect(() => {
     if (result.data?.podcasts) {
       const data = result.data?.podcasts as Podcast[];
@@ -54,6 +52,10 @@ export default function HomePage() {
       }
     }
   }, [result.data]);
+
+  useEffect(() => {
+    setPodcasts([]);
+  }, [debouncedSearchQuery]);
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
