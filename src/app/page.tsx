@@ -67,7 +67,7 @@ export default function HomePage() {
           <div className='grid grid-cols-3 gap-4 mt-8 mb-8'>
             {podcasts &&
               podcasts.map((podcast: Podcast) => (
-                <PodcastCard key={podcast.title} podcast={podcast} />
+                <PodcastCard key={podcast.id} podcast={podcast} />
               ))}
           </div>
         </InfiniteScroll>

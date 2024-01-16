@@ -1,0 +1,21 @@
+query GetPodcasts($page: Int, $limit: Int, $search: String) {
+  podcasts(page: $page, limit: $limit, search: $search) {
+    id
+    title
+    description
+    categoryName
+    images {
+      default
+      featured
+      thumbnail
+      wide
+    }
+    isExclusive
+    publisherName
+    publisherId
+    mediaType
+    categoryId
+    hasFreeEpisodes
+    playSequence
+  }
+}

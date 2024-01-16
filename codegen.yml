@@ -1,0 +1,15 @@
+schema: 'http://localhost:8000/graphql'
+documents: 'src/app/graphql/*.graphql'
+# Format files
+hooks:
+  afterAllFileWrite:
+    - prettier --write
+
+generates:
+  src/app/graphql/generated-gql.tsx:
+    config:
+      withHooks: true
+    plugins:
+      - 'typescript'
+      - 'typescript-operations'
+      - 'typescript-urql'
